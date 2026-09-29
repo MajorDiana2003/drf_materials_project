@@ -1,30 +1,37 @@
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from users.models import User, Payment
-from users.serializers import UserSerializer, PaymentSerializer
-from users.permissions import IsOwner
-from rest_framework.filters import OrderingFilter
+from users.serializers import UserSerializer, UserPublicSerializer, PaymentSerializer
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import OrderingFilter
 
-
-class UserProfileUpdateAPIView(generics.RetrieveUpdateAPIView):
-    """Просмотр и редактирование профиля пользователя"""
-    queryset = User.objects.all()
+class UserCreateAPIView(generics.CreateAPIView):
+    """Задание 1: Регистрация пользователей (Открыта для всех)"""
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [AllowAny]
 
-    def get_object(self):
-        # Эндпоинт вернет того пользователя, который авторизован, независимо от pk в URL
-        return self.request.user
+
+class UserListAPIView(generics.ListAPIView):
+    """Просмотр списка пользователей"""
+    queryset = User.objects.all()
+    serializer_class = UserPublicSerializer  # Для списка отдаем только публичные данные
+
+
+class UserProfileUpdateAPIView(generics.RetrieveUpdateDestroyAPIView):
+    """Задание 1 + Доп. задание: Просмотр, обновление и удаление пользователя"""
+    queryset = User.objects.all()
+
+    def get_serializer_class(self):
+        """Если запрашивается свой профиль — отдаем полную инфу, если чужой — публичную"""
+        if self.get_object() == self.request.user:
+            return UserSerializer
+        return UserPublicSerializer
 
 
 class PaymentListAPIView(generics.ListAPIView):
-    """Вывод списка платежей с фильтрацией и сортировкой"""
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
-
     filter_backends = [DjangoFilterBackend, OrderingFilter]
-
     filterset_fields = ('course', 'lesson', 'payment_method')
-
     ordering_fields = ('payment_date',)
+
