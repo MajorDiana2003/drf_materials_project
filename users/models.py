@@ -67,20 +67,22 @@ class Payment(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments', verbose_name='Пользователь')
     payment_date = models.DateTimeField(default=timezone.now, verbose_name='Дата оплаты')
-
-    # Ссылки на оплаченный курс или урок
     course = models.ForeignKey('materials.Course', on_delete=models.SET_NULL, blank=True, null=True,
                                verbose_name='Оплаченный курс')
     lesson = models.ForeignKey('materials.Lesson', on_delete=models.SET_NULL, blank=True, null=True,
                                verbose_name='Оплаченный урок')
-
-    payment_amount = models.DecimalField(max_length=10, max_digits=10, decimal_places=2, verbose_name='Сумма оплаты')
+    payment_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Сумма оплаты')
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default=TRANSFER,
                                       verbose_name='Способ оплаты')
+
+    # Новые поля по ТЗ для интеграции со Stripe
+    session_id = models.CharField(max_length=255, blank=True, null=True, verbose_name='ID сессии Stripe')
+    payment_link = models.URLField(max_length=400, blank=True, null=True, verbose_name='Ссылка на оплату')
 
     class Meta:
         verbose_name = 'Платеж'
         verbose_name_plural = 'Платежи'
+        ordering = ('-payment_date',)
 
     def __str__(self):
         return f'{self.user.email} - {self.payment_amount}'
