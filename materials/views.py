@@ -7,6 +7,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.generics import get_object_or_404
 from materials.paginators import MaterialPagination
+from django.utils import timezone
+from datetime import timedelta
+from materials.tasks import send_course_update_email
+
 
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
@@ -31,6 +35,14 @@ class CourseViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Автоматическое сохранение владельца при создании курса"""
         serializer.save(owner=self.request.user)
+
+    def perform_update(self, serializer):
+        course = serializer.save()
+        # Проверяем логику: если с момента прошлого апдейта прошло более 4 часов
+        if course.last_update and timezone.now() - course.last_update > timedelta(hours=4):
+            # Запускаем асинхронную задачу Celery (.delay() отправляет её в очередь)
+            send_course_update_email.delay(course.id)
+
 
 
 # Дженерики для Уроков с разграничением прав
@@ -60,6 +72,14 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, IsModerator | IsOwner]  # Модератор или Владелец
+
+    def perform_update(self, serializer):
+        lesson = serializer.save()
+        course = lesson.course
+        if course and course.last_update and timezone.now() - course.last_update > timedelta(hours=4):
+            send_course_update_email.delay(course.id)
+            # Обновляем дату изменения самого курса, чтобы зафиксировать триггер
+            course.save()
 
 
 class LessonDestroyAPIView(generics.DestroyAPIView):
