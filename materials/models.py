@@ -14,6 +14,7 @@ class Course(models.Model):
     class Meta:
         verbose_name = 'Курс'
         verbose_name_plural = 'Курсы'
+        ordering = ('id',)
 
     def __str__(self):
         return self.title
@@ -33,7 +34,21 @@ class Lesson(models.Model):
     class Meta:
         verbose_name = 'Урок'
         verbose_name_plural = 'Уроки'
+        ordering = ('id',)
 
     def __str__(self):
         return self.title
 
+
+class Subscription(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='subscriptions', verbose_name='Пользователь')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='subscriptions', verbose_name='Курс')
+
+    class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        # Гарантируем уникальность пары пользователь-курс
+        unique_together = ('user', 'course')
+
+    def __str__(self):
+        return f'{self.user.email} подписан на {self.course.title}'
