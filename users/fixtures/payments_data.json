@@ -1,0 +1,54 @@
+[
+  {
+    "model": "materials.course",
+    "pk": 1,
+    "fields": {
+      "title": "Тестовый курс по Django",
+      "description": "Описание тестового курса"
+    }
+  },
+  {
+    "model": "materials.lesson",
+    "pk": 1,
+    "fields": {
+      "title": "Тестовый урок 1",
+      "description": "Описание урока",
+      "course": 1
+    }
+  },
+  {
+    "model": "users.user",
+    "pk": 2,
+    "fields": {
+      "email": "student@example.com",
+      "password": "pbkdf2_sha256$870000$local_hash_stub$12345",
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false
+    }
+  },
+  {
+    "model": "users.payment",
+    "pk": 1,
+    "fields": {
+      "user": 2,
+      "payment_date": "2026-09-25T12:00:00Z",
+      "course": 1,
+      "lesson": null,
+      "payment_amount": "15000.00",
+      "payment_method": "transfer"
+    }
+  },
+  {
+    "model": "users.payment",
+    "pk": 2,
+    "fields": {
+      "user": 2,
+      "payment_date": "2026-09-28T15:30:00Z",
+      "course": null,
+      "lesson": 1,
+      "payment_amount": "1500.00",
+      "payment_method": "cash"
+    }
+  }
+]
