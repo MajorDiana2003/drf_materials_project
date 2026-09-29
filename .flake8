@@ -1,0 +1,12 @@
+[flake8]
+# Настройка длины строки
+max-line-length = 119
+
+# Исключаем из проверки папки интерпретатора, миграции и кэш
+exclude =
+    .venv,
+    venv,
+    .git,
+    __pycache__,
+    migrations,
+    manage.py
