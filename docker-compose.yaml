@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # 1. Сервис базы данных PostgreSQL
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    expose:
+      - "5432"
+
+  # 2. Брокер сообщений Redis
+  redis:
+    image: redis:7-alpine
+    restart: always
+    volumes:
+      - redis_data:/data
+    expose:
+      - "6379"
+
+  # 3. DRF-приложение (Веб-сервер)
+  web:
+    build: .
+    restart: always
+    command: >
+      sh -c "python manage.py migrate &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+
+
+  # 4. Воркер Celery для фоновых задач
+  celery:
+    build: .
+    restart: always
+    command: celery -A config worker --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - db
+
+  # 5. Celery Beat для периодических задач
+  celery-beat:
+    build: .
+    restart: always
+    command: celery -A config beat --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - db
+
+volumes:
+  pg_data:
+  redis_data:
+
+  
